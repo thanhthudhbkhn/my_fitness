@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 use App\User;
+use App\Program;
 
 class UsersController extends Controller
 {
@@ -58,31 +59,68 @@ class UsersController extends Controller
       return redirect('');
     }
 
-    function profile($username){
-      $user = User::where('username', $username)->first();
-      return view('users.profile')->with('user',$user);
+    function profile($username) {
+        if (Auth::check()) {
+            $user = User::where('username', $username)->first();
+            return view('users.profile')->with('user', $user);
+        }
+        return redirect ('');
     }
 
-    function postUpdate(Request $request, $username){
-      $user = User::where('username', $username)->first();
-      $user->fullname = $request->fullname;
-      $user->birthday = $request->birthday;
-      $user->weight = $request->weight;
-      $user->height = $request->height;
-      $user->job = $request->job;
-      $user->address = $request->address;
-      $user->purpose = $request->purpose;
-      $user->save();
+    function postUpdate(Request $request, $username) {
+        if (Auth::check()) {
+            $user = User::where('username', $username)->first();
+            $user->fullname = $request->fullname;
+            $user->birthday = $request->birthday;
+            $user->weight = $request->weight;
+            $user->height = $request->height;
+            $user->job = $request->job;
+            $user->address = $request->address;
+            $user->purpose = $request->purpose;
+            $user->save();
 
-      return redirect()->back()->with('alert', 'Update profile successfully.');
+            return redirect()->back()->with('alert', 'Update profile successfully.');
+        }
+        return redirect('');
     }
 
-    function getMyPage($username){
-      $user = User::where('username', $username)->first();
-      $following_program = $user->following_program;
-      return view('users.my_page')->with([
-        'following_program' => $following_program,
-        'user' => $user
-      ]);
+    function getMyPage($username) {
+        if (Auth::check()) {
+            $user = User::where('username', $username)->first();
+            $following_program = $user->following_program;
+            return view('users.my_page')->with([
+                        'following_program' => $following_program,
+                        'user' => $user
+            ]);
+        }
+        return redirect('');
     }
+
+   function getListProgram() {
+        if (Auth::check()) {
+            return view('users.my_list_program');
+        }
+        return redirect('');
+    }
+
+    function postListProgram(Request $request) {
+        if (Auth::check()) {
+            $height = $request->height;
+            $weigh = $request->weigh;
+            $age = $request->age;
+
+            if ($age <= 40 && ($weigh >= ($height - 90))) {
+                $programs = Program::where('level', 3)->paginate(12);
+            } else {
+                if ($age > 50) {
+                    $programs = Program::where('level', 1)->paginate(12);
+                } else {
+                    $programs = Program::where('level', 2)->paginate(12);
+                }
+            }
+            return view('users.my_list_program')->with('programs', $programs);
+        }
+        return redirect('');
+    }
+
 }
